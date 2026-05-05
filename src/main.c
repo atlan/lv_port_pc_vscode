@@ -1,14 +1,9 @@
 /**
  * @file main.c
- *
  */
 
-/*********************
- *      INCLUDES
- *********************/
-
 #ifndef _DEFAULT_SOURCE
-  #define _DEFAULT_SOURCE /* needed for usleep() */
+  #define _DEFAULT_SOURCE
 #endif
 
 #include <stdlib.h>
@@ -19,79 +14,44 @@
   #include <unistd.h>
   #include <pthread.h>
 #endif
+
 #include "lvgl/lvgl.h"
 #include "lvgl/examples/lv_examples.h"
 #include "lvgl/demos/lv_demos.h"
 #include <SDL.h>
 
 #include "hal/hal.h"
+#include "simulations/sim.h"
+#include "simulations/osiris_bottom/osiris_bottom.h"
 
-/*********************
- *      DEFINES
- *********************/
-
-/**********************
- *      TYPEDEFS
- **********************/
-
-/**********************
- *  STATIC PROTOTYPES
- **********************/
-
-/**********************
- *  STATIC VARIABLES
- **********************/
-
-/**********************
- *      MACROS
- **********************/
-
-/**********************
- *   GLOBAL FUNCTIONS
- **********************/
+/* Aktive Simulation — zum Wechseln einfach eine andere sim_t eintragen */
+static const sim_t active_sim = { "osiris_bottom", 800, 480, osiris_bottom_init, osiris_bottom_tick };
 
 #if LV_USE_OS != LV_OS_FREERTOS
 
 int main(int argc, char **argv)
 {
-  (void)argc; /*Unused*/
-  (void)argv; /*Unused*/
+    (void)argc;
+    (void)argv;
 
-  /*Initialize LVGL*/
-  lv_init();
+    lv_init();
+    sdl_hal_init(active_sim.width, active_sim.height);
 
-  /*Initialize the HAL (display, input devices, tick) for LVGL*/
-  sdl_hal_init(320, 480);
+    active_sim.init();
 
-  /* Run the default demo */
-  /* To try a different demo or example, replace this with one of: */
-  /* - lv_demo_benchmark(); */
-  /* - lv_demo_stress(); */
-  /* - lv_example_label_1(); */
-  /* - etc. */
-  lv_demo_widgets();
-
-  while(1) {
-    /* Periodically call the lv_task handler.
-     * It could be done in a timer interrupt or an OS task too.*/
-    uint32_t sleep_time_ms = lv_timer_handler();
-    if(sleep_time_ms == LV_NO_TIMER_READY){
-	sleep_time_ms =  LV_DEF_REFR_PERIOD;
-    }
+    while (1) {
+        uint32_t sleep_time_ms = lv_timer_handler();
+        active_sim.tick();
+        if (sleep_time_ms == LV_NO_TIMER_READY)
+            sleep_time_ms = LV_DEF_REFR_PERIOD;
 #ifdef _MSC_VER
-    Sleep(sleep_time_ms);
+        Sleep(sleep_time_ms);
 #else
-    usleep(sleep_time_ms * 1000);
+        usleep(sleep_time_ms * 1000);
 #endif
-  }
+    }
 
-  return 0;
+    return 0;
 }
 
-
 #endif
-
-/**********************
- *   STATIC FUNCTIONS
- **********************/
-

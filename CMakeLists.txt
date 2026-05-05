@@ -69,7 +69,7 @@ add_compile_definitions($<$<BOOL:${LV_USE_FFMPEG}>:LV_USE_FFMPEG=1>)
 add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${PROJECT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS})
 
-set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c)
+set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c src/simulations/hud/hud.c src/simulations/horus/horus.c src/simulations/osiris_top/osiris_top.cpp src/simulations/osiris_bottom/osiris_bottom.cpp)
 set(MAIN_LIBS lvgl lvgl::examples lvgl::demos lvgl::thorvg ${SDL2_LIBRARIES})
 
 # Create the main executable, depending on the FreeRTOS option
@@ -141,7 +141,76 @@ if(LVGL_PRO_PROJECT_DIR)
   endif()
 endif()
 
-add_executable(main ${MAIN_SOURCES})
+add_executable(main ${MAIN_SOURCES}
+    src/fonts/ui_font_mdi18.c
+    src/fonts/ui_font_mdi30.c
+    src/fonts/ui_font_mdi34.c
+    src/fonts/ui_font_mdi80.c
+    src/fonts/ui_font_mdi100.c
+    src/fonts/ui_font_mdi130.c
+    src/fonts/ui_font_star.c
+    src/fonts/ui_font_star100.c
+    src/fonts/ui_font_star160.c
+    src/fonts/ui_font_ver14.c
+    src/fonts/ui_font_ver16.c
+    src/fonts/ui_font_ver18.c
+    src/fonts/ui_font_ver18b.c
+    src/fonts/ui_font_ver24.c
+    src/fonts/ui_font_ver26.c
+    src/fonts/ui_font_ver30.c
+    src/fonts/ui_font_ver60.c
+    src/fonts/ui_font_ver70.c
+    src/glyphs/hud_icons/coolant_temperature.c
+    src/glyphs/hud_icons/engine.c
+    src/glyphs/hud_icons/gas_station.c
+    src/glyphs/hud_icons/home_export_outline.c
+    src/glyphs/hud_icons/satellite_variant.c
+    src/glyphs/hud_icons/thermometer.c
+    src/glyphs/hud_icons/transmission_tower.c
+    src/glyphs/hud_icons/transmission_tower_off.c
+    src/glyphs/horus_icons/away.c
+    src/glyphs/horus_icons/home_a.c
+    src/glyphs/horus_icons/home_b.c
+    src/glyphs/horus_icons/off.c
+    src/glyphs/horus_icons/horus.c
+    src/glyphs/horus_icons/eye_of_horus.c
+    src/glyphs/horus_icons/custom.c
+    src/glyphs/horus_icons/vacation.c
+    src/glyphs/osiris_icons/categories.c
+    src/glyphs/osiris_icons/rooms.c
+    src/glyphs/osiris_icons/settings.c
+    src/glyphs/osiris_icons/battery.c
+    src/glyphs/osiris_icons/clock_icon.c
+    src/glyphs/osiris_icons/energy.c
+    src/glyphs/osiris_icons/steering.c
+    src/glyphs/osiris_icons/temperature.c
+    src/glyphs/navi_maneuver/arrow_left_bold.c
+    src/glyphs/navi_maneuver/arrow_left_top_bold.c
+    src/glyphs/navi_maneuver/arrow_right_bold.c
+    src/glyphs/navi_maneuver/arrow_right_top_bold.c
+    src/glyphs/navi_maneuver/arrow_top_left_thick.c
+    src/glyphs/navi_maneuver/arrow_top_right_thick.c
+    src/glyphs/navi_maneuver/arrow_u_down_left.c
+    src/glyphs/navi_maneuver/arrow_u_down_right.c
+    src/glyphs/navi_maneuver/arrow_up_bold.c
+    src/glyphs/navi_maneuver/map_marker_check.c
+    src/glyphs/navi_maneuver/map_marker_left.c
+    src/glyphs/navi_maneuver/map_marker_right.c
+    src/glyphs/speedlimit_icons/sl005.c
+    src/glyphs/speedlimit_icons/sl010.c
+    src/glyphs/speedlimit_icons/sl020.c
+    src/glyphs/speedlimit_icons/sl030.c
+    src/glyphs/speedlimit_icons/sl040.c
+    src/glyphs/speedlimit_icons/sl050.c
+    src/glyphs/speedlimit_icons/sl060.c
+    src/glyphs/speedlimit_icons/sl070.c
+    src/glyphs/speedlimit_icons/sl080.c
+    src/glyphs/speedlimit_icons/sl090.c
+    src/glyphs/speedlimit_icons/sl100.c
+    src/glyphs/speedlimit_icons/sl110.c
+    src/glyphs/speedlimit_icons/sl120.c
+    src/glyphs/speedlimit_icons/sl130.c
+)
 target_compile_definitions(main PRIVATE LV_CONF_INCLUDE_SIMPLE)
 target_link_libraries(main ${MAIN_LIBS})
 
