@@ -14,7 +14,7 @@
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 enum HaDomain : uint8_t {
-    HaD_Light=0, HaD_Switch, HaD_Climate, HaD_Sensor, HaD_BinarySensor, HaD_Cover, HaD_Camera, HaD_Script
+    HaD_Light=0, HaD_Switch, HaD_Climate, HaD_Sensor, HaD_BinarySensor, HaD_Cover, HaD_Camera, HaD_Script, HaD_Fan
 };
 
 enum HaCategory : uint8_t {
@@ -59,18 +59,19 @@ enum HaService : uint8_t {
     HaSvc_DimToggle,   // light with brightness support
     HaSvc_CoverToggle, // cover
     HaSvc_ScriptRun,   // script (trigger via script/turn_on)
+    HaSvc_FanToggle,   // fan with optional percentage (0-100)
     HaSvc_None         // read-only sensor/binary_sensor/climate/camera
 };
 
 struct HaEntity {
     const char* entity_id;
     const char* name;
-    enum HaDomain    domain;
-    enum HaService   service;
+    HaDomain    domain;
+    HaService   service;
 };
 
 #define HA_ENTITY_COUNT 194
-static const struct HaEntity HA_ENTITIES[] = {
+static const HaEntity HA_ENTITIES[] = {
     {"light.dach", "Roo Light", HaD_Light, HaSvc_Toggle},
     {"sensor.roo_temp_hum_sensor_temperature", "Roo Temp Hum Sensor Temperatur", HaD_Sensor, HaSvc_None},
     {"sensor.roo_temp_hum_sensor_humidity", "Roo Temp Hum Sensor Luftfeuchtigkeit", HaD_Sensor, HaSvc_None},
@@ -172,8 +173,8 @@ static const struct HaEntity HA_ENTITIES[] = {
     {"sensor.out_sensor_garden_illuminance", "Gar MotionLight Beleuchtungsstärke", HaD_Sensor, HaSvc_None},
     {"camera.g5_turret_ultra_high_resolution_channel", "G5 Turret Ultra Einfahrt High resolution channel", HaD_Camera, HaSvc_None},
     {"camera.g5_ptz_high_resolution_channel", "G5 PTZ Einfahrt High resolution channel", HaD_Camera, HaSvc_None},
-    {"light.wled_2", "Run LEDStripe", HaD_Light, HaSvc_DimToggle},
     {"light.run_wled_short", "light.run_wled_short", HaD_Light, HaSvc_DimToggle},
+    {"light.wled_2", "Run LEDStripe", HaD_Light, HaSvc_DimToggle},
     {"light.run_carport_wled", "Run Carport Entrance", HaD_Light, HaSvc_DimToggle},
     {"light.run_carport_wled_segment_1", "Run Carport Runway", HaD_Light, HaSvc_DimToggle},
     {"light.bas_light_1", "Bas Light 1", HaD_Light, HaSvc_Toggle},
@@ -190,16 +191,16 @@ static const struct HaEntity HA_ENTITIES[] = {
     {"sensor.lab_temp_hum_sensor_humidity", "Lab Temp Hum Sensor Luftfeuchtigkeit", HaD_Sensor, HaSvc_None},
     {"binary_sensor.lab_window_sensor_b_contact", "Lab Window Sensor B Tür", HaD_BinarySensor, HaSvc_None},
     {"binary_sensor.lab_window_sensor_c_contact", "Lab Window Sensor C Tür", HaD_BinarySensor, HaSvc_None},
-    {"script.ambiente_bright_down", "Ambiente Bright Down", HaD_Script, HaSvc_ScriptRun},
-    {"script.ambiente_bright_up", "Ambiente Bright Up", HaD_Script, HaSvc_ScriptRun},
-    {"script.ambiente_lavendel", "Ambiente Lavendel ", HaD_Script, HaSvc_ScriptRun},
     {"script.bedtime", "Bedtime ", HaD_Script, HaSvc_ScriptRun},
     {"script.eg_cover", "EG Cover", HaD_Script, HaSvc_ScriptRun},
+    {"script.lrtoggletv", "LRToggleTV", HaD_Script, HaSvc_ScriptRun},
+    {"script.lrtoggleambiente", "LRToggleAmbiente", HaD_Script, HaSvc_ScriptRun},
+    {"script.ambiente_bright_up", "Ambiente Bright Up", HaD_Script, HaSvc_ScriptRun},
+    {"script.ambiente_bright_down", "Ambiente Bright Down", HaD_Script, HaSvc_ScriptRun},
+    {"script.fireplace_power", "Fireplace Power", HaD_Script, HaSvc_ScriptRun},
     {"script.fireplace_fire", "Fireplace Fire", HaD_Script, HaSvc_ScriptRun},
     {"script.fireplace_heat", "Fireplace Heat", HaD_Script, HaSvc_ScriptRun},
-    {"script.fireplace_power", "Fireplace Power", HaD_Script, HaSvc_ScriptRun},
-    {"script.lrtoggleambiente", "LRToggleAmbiente", HaD_Script, HaSvc_ScriptRun},
-    {"script.lrtoggletv", "LRToggleTV", HaD_Script, HaSvc_ScriptRun},
+    {"script.ambiente_lavendel", "Ambiente Lavendel ", HaD_Script, HaSvc_ScriptRun},
     {"script.runway_light_off", "Runway Light Off", HaD_Script, HaSvc_ScriptRun},
     {"script.runway_light_on", "Runway Light On", HaD_Script, HaSvc_ScriptRun},
     {"sensor.tasmota_sgm_c8_total", "Tasmota SGM-C8 Total", HaD_Sensor, HaSvc_None},
@@ -422,9 +423,14 @@ static const bool HA_ROOM_VISIBLE[HA_ROOM_COUNT] = {
     true,  // WASCHKUECHE
 };
 
+// ─── Fav-for-control indices (Bottom default tab tiles) ───────────────────────
+static const uint16_t HA_FAV_IDX[] = {56, 119, 120, 121, 122, 50, 41, 105, 36};
+#define HA_FAV_CNT 9
+
 // ─── Summary template (for ha_rest: active counts per category then room) ─────
 // Result: pipe-separated integers, 8 category counts + 21 room counts.
-static const char HA_SUMMARY_TEMPLATE[] = "{%set l=['light.dach','light.bat_light','light.off_light_l1','light.sonoff_100135c1bc_1','light.smart_star_projector_background','light.smart_star_projector_laser','light.upf_light_ceiling','light.flo_light_ceiling','light.flo_ledstrip','light.kit_light_1','light.kit_light_buffet','light.kit_light_line','light.sonoff_10018427b3_1','light.wohnzimmerlufter','light.wohnzimmertv_backlight','light.liv_light_4','light.liv_light_1','light.liv_socket_1','light.liv_socket_2','light.toi_light','light.wled_2','light.run_wled_short','light.run_carport_wled','light.run_carport_wled_segment_1','light.bas_light_1','light.bas_light_2','light.lab_fan']%}{{l|select('is_state','on')|list|count}}|{%set s=['switch.sle_tv','switch.flo_siren_alarm','switch.liv_tv','switch.liv_mosquitokiller','switch.liv_sidematrix','switch.liv_backspeaker','switch.liv_usb_l1','switch.liv_usb_l2','switch.bas_heating','switch.lab_socket_desktop','switch.lab_socket_printer','switch.hsr01','switch.hsr03','switch.hsr05','switch.hsr06','switch.hsr04','switch.hsr02','switch.hsr10','switch.hsr11','switch.hsr14','switch.hsr13','switch.hsr12','switch.hsr17','switch.hsr19','switch.hsr15','switch.hsr18','switch.hsr09','switch.hsr08','switch.hsr16','switch.hsr07','switch.hsr20','switch.hsr21','switch.hsr22','switch.hsr24','switch.hsr23']%}{{s|select('is_state','on')|list|count}}|{%set k=['climate.bat_radiator_thermostat','climate.bat_thermostat','climate.dre_thermostat','climate.off_thermostat','climate.sle_thermostat','climate.flo_thermostat','climate.kit_thermostat','climate.liv_thermostat','climate.toi_thermostat','climate.lab_thermostat','climate.lau_thermostat']%}{{k|reject('is_state','off')|list|count}}|0|{%set w=['binary_sensor.roo_window_sensor_a_contact','binary_sensor.roo_window_sensor_c_contact','binary_sensor.roo_window_sensor_d_contact','binary_sensor.roo_window_sensor_b_contact','binary_sensor.bat_window_sensor_a_contact','binary_sensor.bat_window_sensor_b_contact','binary_sensor.wise_bat_upf_contact','binary_sensor.wise_dre_upf_contact','cover.off_shutter_window','binary_sensor.off_window_sensor_a_contact','binary_sensor.wise_off_upf_contact','binary_sensor.off_window_sensor_b_contact','cover.sle_shutter_window','binary_sensor.sle_window_sensor_contact','binary_sensor.wise_sle_upf_contact','binary_sensor.wise_cle_flo_contact','binary_sensor.flo_window_sensor_contact','cover.kit_shutter_window','binary_sensor.kit_window_sensor_contact','binary_sensor.wise_kit_flo_contact','cover.liv_shutter_patio_door','cover.liv_shutter_window_runway','cover.liv_shutter_window_garden','binary_sensor.wise_liv_flo_contact','binary_sensor.liv_window_sensor_a_contact','binary_sensor.liv_window_sensor_c_contact','binary_sensor.liv_window_sensor_b_contact','binary_sensor.wise_pan_kit_contact','binary_sensor.wise_toi_flo_contact','binary_sensor.toi_window_sensor_contact','binary_sensor.wise_hea_bas_contact','binary_sensor.lab_window_sensor_a_contact','binary_sensor.wise_lab_bas_contact','binary_sensor.lab_window_sensor_b_contact','binary_sensor.lab_window_sensor_c_contact','binary_sensor.wise_lau_bas_contact','binary_sensor.lau_window_sensor_contact']%}{{(w|select('is_state','on')|list|count)+(w|select('is_state','open')|list|count)+(w|select('is_state','opening')|list|count)}}|0|0|{%set p=['script.ambiente_bright_down','script.ambiente_bright_up','script.ambiente_lavendel','script.bedtime','script.eg_cover','script.fireplace_fire','script.fireplace_heat','script.fireplace_power','script.lrtoggleambiente','script.lrtoggletv','script.runway_light_off','script.runway_light_on']%}{{p|select('is_state','on')|list|count}}|{%for a in['dachboden','badezimmer','ankleidezimmer','buro','schlafzimmer','treppe','erster_stock','cleaning_room','flur','kuche','wohnzimmer','pantry','klo','eingang','garten','einfahrt','keller','heizungsraum','labor','controlroom','waschkuche']%}{{area_entities(a)|select('is_state','on')|list|count+area_entities(a)|select('is_state','open')|list|count}}|{%endfor%}";
+static const char HA_SUMMARY_TEMPLATE[] = "{%set l=['light.dach','light.bat_light','light.off_light_l1','light.sonoff_100135c1bc_1','light.smart_star_projector_background','light.smart_star_projector_laser','light.upf_light_ceiling','light.flo_light_ceiling','light.flo_ledstrip','light.kit_light_1','light.kit_light_buffet','light.kit_light_line','light.sonoff_10018427b3_1','light.wohnzimmerlufter','light.wohnzimmertv_backlight','light.liv_light_4','light.liv_light_1','light.liv_socket_1','light.liv_socket_2','light.toi_light','light.run_wled_short','light.wled_2','light.run_carport_wled','light.run_carport_wled_segment_1','light.bas_light_1','light.bas_light_2','light.lab_fan']%}{{l|select('is_state','on')|list|count}}|{%set s=['switch.sle_tv','switch.flo_siren_alarm','switch.liv_tv','switch.liv_mosquitokiller','switch.liv_sidematrix','switch.liv_backspeaker','switch.liv_usb_l1','switch.liv_usb_l2','switch.bas_heating','switch.lab_socket_desktop','switch.lab_socket_printer','switch.hsr01','switch.hsr03','switch.hsr05','switch.hsr06','switch.hsr04','switch.hsr02','switch.hsr10','switch.hsr11','switch.hsr14','switch.hsr13','switch.hsr12','switch.hsr17','switch.hsr19','switch.hsr15','switch.hsr18','switch.hsr09','switch.hsr08','switch.hsr16','switch.hsr07','switch.hsr20','switch.hsr21','switch.hsr22','switch.hsr24','switch.hsr23']%}{{s|select('is_state','on')|list|count}}|{%set k=['climate.bat_radiator_thermostat','climate.bat_thermostat','climate.dre_thermostat','climate.off_thermostat','climate.sle_thermostat','climate.flo_thermostat','climate.kit_thermostat','climate.liv_thermostat','climate.toi_thermostat','climate.lab_thermostat','climate.lau_thermostat']%}{{k|reject('is_state','off')|list|count}}|0|{%set w=['binary_sensor.roo_window_sensor_a_contact','binary_sensor.roo_window_sensor_c_contact','binary_sensor.roo_window_sensor_d_contact','binary_sensor.roo_window_sensor_b_contact','binary_sensor.bat_window_sensor_a_contact','binary_sensor.bat_window_sensor_b_contact','binary_sensor.wise_bat_upf_contact','binary_sensor.wise_dre_upf_contact','cover.off_shutter_window','binary_sensor.off_window_sensor_a_contact','binary_sensor.wise_off_upf_contact','binary_sensor.off_window_sensor_b_contact','cover.sle_shutter_window','binary_sensor.sle_window_sensor_contact','binary_sensor.wise_sle_upf_contact','binary_sensor.wise_cle_flo_contact','binary_sensor.flo_window_sensor_contact','cover.kit_shutter_window','binary_sensor.kit_window_sensor_contact','binary_sensor.wise_kit_flo_contact','cover.liv_shutter_patio_door','cover.liv_shutter_window_runway','cover.liv_shutter_window_garden','binary_sensor.wise_liv_flo_contact','binary_sensor.liv_window_sensor_a_contact','binary_sensor.liv_window_sensor_c_contact','binary_sensor.liv_window_sensor_b_contact','binary_sensor.wise_pan_kit_contact','binary_sensor.wise_toi_flo_contact','binary_sensor.toi_window_sensor_contact','binary_sensor.wise_hea_bas_contact','binary_sensor.lab_window_sensor_a_contact','binary_sensor.wise_lab_bas_contact','binary_sensor.lab_window_sensor_b_contact','binary_sensor.lab_window_sensor_c_contact','binary_sensor.wise_lau_bas_contact','binary_sensor.lau_window_sensor_contact']%}{{(w|select('is_state','on')|list|count)+(w|select('is_state','open')|list|count)+(w|select('is_state','opening')|list|count)}}|0|0|{%set p=['script.bedtime','script.eg_cover','script.lrtoggletv','script.lrtoggleambiente','script.ambiente_bright_up','script.ambiente_bright_down','script.fireplace_power','script.fireplace_fire','script.fireplace_heat','script.ambiente_lavendel','script.runway_light_off','script.runway_light_on']%}{{p|select('is_state','on')|list|count}}|{%for a in['dachboden','badezimmer','ankleidezimmer','buro','schlafzimmer','treppe','erster_stock','cleaning_room','flur','kuche','wohnzimmer','pantry','klo','eingang','garten','einfahrt','keller','heizungsraum','labor','controlroom','waschkuche']%}{{area_entities(a)|select('is_state','on')|list|count+area_entities(a)|select('is_state','open')|list|count}}|{%endfor%}";
+
 
 
 // ─── Colours ────────────────────────────────────────────────────────────────
@@ -438,6 +444,7 @@ static const char HA_SUMMARY_TEMPLATE[] = "{%set l=['light.dach','light.bat_ligh
 
 LV_FONT_DECLARE(ui_font_ver14);
 LV_FONT_DECLARE(ui_font_ver18);
+LV_FONT_DECLARE(ui_font_ver18b);
 LV_FONT_DECLARE(ui_font_ver24);
 LV_FONT_DECLARE(ui_font_ver30);
 LV_FONT_DECLARE(ui_font_star);
@@ -455,6 +462,7 @@ enum : uint8_t {
     ACT_TEMP_UP      = 6, ACT_TEMP_DN   = 7,   // climate setpoint
     ACT_BRIGHT_UP    = 8, ACT_BRIGHT_DN = 9,   // light brightness
     ACT_CAMERA_SHOW  = 10,                       // open camera stream overlay
+    ACT_FAN_UP       = 11, ACT_FAN_DN  = 12,   // fan percentage
 };
 
 // ─── Tabs: 0=Uhr  1=Steuerung  2=Temp  3=Energie  4=Bat ─────────────────────
@@ -464,6 +472,14 @@ static lv_obj_t *s_lbl_date;
 static lv_obj_t *s_lbl_lux;
 static lv_obj_t *s_lbl_presence;
 static lv_obj_t *s_tab_steuerung;
+
+// ─── Fav-for-control tiles (Uhr tab) ─────────────────────────────────────────
+// Max 8 tiles: interleaved left/right (i%2), 4 rows per column.
+#define FAV_TILE_MAX 8
+static lv_obj_t *s_fav_tile[FAV_TILE_MAX]      = {};
+static lv_obj_t *s_fav_lbl_state[FAV_TILE_MAX] = {};
+static lv_obj_t *s_fav_lbl_unit[FAV_TILE_MAX]  = {};
+static char      s_fav_raw[FAV_TILE_MAX][16]   = {};
 
 // ─── Temp chart state ────────────────────────────────────────────────────────
 #define TEMP_CHART_MAX 580
@@ -495,6 +511,7 @@ enum HaAction : uint8_t {
     HA_COVER_STOP           = 4,
     HA_CLIMATE_SET_TEMP     = 5,
     HA_LIGHT_SET_BRIGHTNESS = 6,  // param = brightness 0-255
+    HA_FAN_SET_PERCENTAGE   = 7,  // param = percentage 0-100
 };
 
 typedef void (*ui_bottom_action_cb_t)(uint16_t entity_idx, HaAction action, float param);
@@ -508,8 +525,9 @@ struct EntityRow {
     float     setpoint;     // climate: current target temp for +/-
 };
 static EntityRow             s_rows[MAX_GROUP_ROWS];
-static uint16_t              s_row_count = 0;
-static ui_bottom_action_cb_t s_action_cb = nullptr;
+static uint16_t              s_row_count   = 0;
+static ui_bottom_action_cb_t s_action_cb   = nullptr;
+static ui_bottom_action_cb_t s_fav_action_cb = nullptr;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -589,6 +607,9 @@ static lv_color_t state_color(const char *raw)
 
 // ─── Action button callback ───────────────────────────────────────────────────
 static void action_btn_cb(lv_event_t *) { /* simulator: no-op */ }
+#if HA_FAV_CNT > 0
+static void fav_tile_cb(lv_event_t *e);
+#endif
 
 // ─── Button / label factories ─────────────────────────────────────────────────
 // user_data encodes (entity_idx << 8 | action_code) so the callback can
@@ -628,9 +649,6 @@ static lv_obj_t *make_state_lbl(lv_obj_t *parent, int w, const char *raw)
 // ─── Build Tab "Uhr" ──────────────────────────────────────────────────────────
 static void build_tab_default(lv_obj_t *tab)
 {
-    //lv_obj_set_style_bg_color(tab, lv_color_hex(0x000000), 0);
-    //lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
-    //lv_obj_set_style_bg_grad_dir(tab, LV_GRAD_DIR_NONE, 0);
     lv_obj_clear_flag(tab, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_style(tab, &style_header_footer, LV_PART_MAIN);
 
@@ -645,7 +663,127 @@ static void build_tab_default(lv_obj_t *tab)
     lv_obj_set_style_text_color(s_lbl_date, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_text_font(s_lbl_date, &ui_font_ver24, 0);
     lv_obj_align(s_lbl_date, LV_ALIGN_CENTER, 0, 30);
+
+#if HA_FAV_CNT > 0
+    const int FAV_TW  = 185;
+    const int FAV_TH  = 100;
+    const int FAV_GAP = 5;
+    const int FAV_X[2] = { 5, DISPLAY_WIDTH - FAV_TW - 5 };  // left=5, right=610
+    const int n = (HA_FAV_CNT < FAV_TILE_MAX) ? HA_FAV_CNT : FAV_TILE_MAX;
+
+    for (int i = 0; i < n; i++) {
+        int col = i % 2;                               // 0=left, 1=right (interleaved)
+        int row = i / 2;                               // 0..3
+        int x   = FAV_X[col];
+        int y   = FAV_GAP + row * (FAV_TH + FAV_GAP);
+
+        lv_obj_t *tile = lv_obj_create(tab);
+        lv_obj_set_size(tile, FAV_TW, FAV_TH);
+        lv_obj_set_pos(tile, x, y);
+        lv_obj_clear_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
+        //lv_obj_set_style_bg_color(tile, lv_color_hex(0x0D1B2A), 0);
+        //lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
+        //lv_obj_set_style_border_color(tile, lv_color_hex(0x3A4A6A), 0);
+        //lv_obj_set_style_border_width(tile, 1, 0);
+        //lv_obj_set_style_radius(tile, 6, 0);
+        lv_obj_set_style_pad_all(tile, 6, 0);
+        lv_obj_set_style_pad_row(tile, 0, 0);
+        lv_obj_set_style_pad_column(tile, 0, 0);
+        //lv_obj_set_style_bg_color(tile, lv_color_hex(0x1E2D3E), LV_STATE_PRESSED);
+        lv_obj_set_user_data(tile, (void *)(uintptr_t)i);
+        lv_obj_add_event_cb(tile, fav_tile_cb, LV_EVENT_CLICKED, nullptr);
+        lv_obj_add_style(tile, &style_button, LV_PART_MAIN);
+        lv_obj_add_style(tile, &style_button_pressed, LV_PART_MAIN | LV_STATE_PRESSED);
+        
+        s_fav_tile[i] = tile;
+
+        // Entity name — static label from HA_ENTITIES at build time
+        uint16_t eidx = HA_FAV_IDX[i];
+        const char *ename = (eidx < HA_ENTITY_COUNT) ? HA_ENTITIES[eidx].name : "?";
+        lv_obj_t *ln = lv_label_create(tile);
+        lv_label_set_text(ln, ename);
+        lv_label_set_long_mode(ln, LV_LABEL_LONG_DOT);
+        lv_obj_set_width(ln, FAV_TW - 12);
+        lv_obj_set_height(ln, LV_SIZE_CONTENT);
+        lv_obj_set_style_text_color(ln, lv_color_hex(0xFFFFFF), 0);
+        lv_obj_set_style_text_font(ln, &ui_font_ver18, 0);
+        lv_obj_align(ln, LV_ALIGN_TOP_MID, 0, 0);
+
+        // State — updated at runtime via ui_bottom_update_fav_tiles
+        lv_obj_t *ls = lv_label_create(tile);
+        lv_label_set_text(ls, "--");
+        lv_obj_set_style_text_font(ls, &ui_font_ver18, 0);
+        lv_obj_set_style_text_color(ls, lv_color_hex(0xCCCCCC), 0);
+        lv_obj_align(ls, LV_ALIGN_CENTER, 0, 0);
+        s_fav_lbl_state[i] = ls;
+
+        // Unit / extra — updated at runtime
+        lv_obj_t *lu = lv_label_create(tile);
+        lv_label_set_text(lu, "");
+        lv_obj_set_style_text_color(lu, lv_color_hex(0xCCCCCC), 0);
+        lv_obj_set_style_text_font(lu, &ui_font_ver14, 0);
+        lv_obj_align(lu, LV_ALIGN_BOTTOM_MID, 0, 0);
+        s_fav_lbl_unit[i] = lu;
+    }
+#endif
 }
+
+// ─── Fav tile click handler ───────────────────────────────────────────────────
+#if HA_FAV_CNT > 0
+static void fav_tile_cb(lv_event_t *e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    if (!s_fav_action_cb) return;
+
+    lv_obj_t *tile = (lv_obj_t *)lv_event_get_target(e);
+    int tidx = (int)(uintptr_t)lv_obj_get_user_data(tile);
+    if (tidx < 0 || tidx >= FAV_TILE_MAX) return;
+
+    const int n = (HA_FAV_CNT < FAV_TILE_MAX) ? HA_FAV_CNT : FAV_TILE_MAX;
+    if (tidx >= n) return;
+
+    uint16_t eidx = HA_FAV_IDX[tidx];
+    if (eidx >= HA_ENTITY_COUNT) return;
+
+    HaDomain    dom = HA_ENTITIES[eidx].domain;
+    const char *raw = s_fav_raw[tidx];
+
+    HaAction    act;
+    const char *opt = nullptr;
+
+    switch (dom) {
+    case HaD_Light:
+    case HaD_Switch:
+    case HaD_Fan:
+        act = (strcmp(raw, "on") == 0) ? HA_TURN_OFF : HA_TURN_ON;
+        opt = (act == HA_TURN_ON) ? "on" : "off";
+        break;
+    case HaD_Script:
+        act = HA_TURN_ON;
+        break;
+    case HaD_Cover:
+        if (strcmp(raw, "open") == 0 || strcmp(raw, "opening") == 0) {
+            act = HA_COVER_CLOSE;
+            opt = "closing";
+        } else {
+            act = HA_COVER_OPEN;
+            opt = "opening";
+        }
+        break;
+    default:
+        return;
+    }
+
+    if (opt && s_fav_lbl_state[tidx]) {
+        strncpy(s_fav_raw[tidx], opt, sizeof(s_fav_raw[0]) - 1);
+        s_fav_raw[tidx][sizeof(s_fav_raw[0]) - 1] = '\0';
+        lv_label_set_text(s_fav_lbl_state[tidx], fmt_state(opt));
+        lv_obj_set_style_text_color(s_fav_lbl_state[tidx], state_color(opt), 0);
+    }
+
+    s_fav_action_cb(eidx, act, 0.0f);
+}
+#endif
 
 // ─── Build Tab "Steuerung" skeleton ──────────────────────────────────────────
 static void build_tab_steuerung(lv_obj_t *tab)
