@@ -176,6 +176,8 @@ add_executable(main ${MAIN_SOURCES}
     src/glyphs/horus_icons/eye_of_horus.c
     src/glyphs/horus_icons/custom.c
     src/glyphs/horus_icons/vacation.c
+    src/glyphs/horus_icons/alone.c
+    src/glyphs/horus_icons/pair.c
     src/glyphs/osiris_icons/categories.c
     src/glyphs/osiris_icons/rooms.c
     src/glyphs/osiris_icons/settings.c

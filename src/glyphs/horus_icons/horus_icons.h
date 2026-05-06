@@ -15,6 +15,8 @@ LV_IMG_DECLARE(horus);
 LV_IMG_DECLARE(eye_of_horus);
 LV_IMG_DECLARE(custom);
 LV_IMG_DECLARE(vacation);
+LV_IMG_DECLARE(alone);
+LV_IMG_DECLARE(pair);
 
 #ifdef __cplusplus
 }
