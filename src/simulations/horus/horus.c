@@ -324,11 +324,16 @@ bool horus_init(void)
     lv_obj_add_style(cont_top_line, &style_header_footer, LV_PART_MAIN);
 
     lv_obj_t *ui_lbl_top = lv_label_create(cont_top_line);
-    lv_obj_set_align(ui_lbl_top, LV_ALIGN_CENTER);
-    lv_obj_align(ui_lbl_top, LV_ALIGN_CENTER, 0, -5);
+    lv_obj_align(ui_lbl_top, LV_ALIGN_LEFT_MID, 10, -5);
     lv_label_set_text(ui_lbl_top, "Horus Perimeter");
     lv_obj_set_style_text_font(ui_lbl_top, &ui_font_star, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_lbl_top, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+
+    lv_obj_t *ui_time_top = lv_label_create(cont_top_line);
+    lv_obj_align(ui_time_top, LV_ALIGN_RIGHT_MID, -10, -5);
+    lv_label_set_text(ui_time_top, "12:00");
+    lv_obj_set_style_text_font(ui_time_top, &ui_font_star, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_time_top, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
 
     lv_obj_t *cont_ta_line = lv_obj_create(cont_main);
     lv_obj_set_size(cont_ta_line, 512, 308);
