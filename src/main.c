@@ -24,9 +24,10 @@
 #include "simulations/sim.h"
 #include "simulations/osiris_bottom/osiris_bottom.h"
 #include "simulations/horus/horus.h"
+#include "simulations/hud/hud.h"
 
 /* Aktive Simulation — zum Wechseln einfach eine andere sim_t eintragen */
-static const sim_t active_sim = { "horus", 1024, 600, horus_init, horus_tick };
+static const sim_t active_sim = { "hud", 1280, 720, hud_init, hud_tick };
 
 #if LV_USE_OS != LV_OS_FREERTOS
 
