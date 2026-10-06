@@ -69,7 +69,7 @@ add_compile_definitions($<$<BOOL:${LV_USE_FFMPEG}>:LV_USE_FFMPEG=1>)
 add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${PROJECT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS})
 
-set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c src/simulations/hud/hud.c src/simulations/horus/horus.c src/simulations/osiris_top/osiris_top.cpp src/simulations/osiris_bottom/osiris_bottom.cpp)
+set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c src/simulations/hud/hud.c src/simulations/horus/horus.c src/simulations/bes/bes.c src/simulations/bes/bes_lcars.c src/simulations/bes/bes_tones.c src/simulations/bes/bes_tones_sdl.c src/simulations/osiris_top/osiris_top.cpp src/simulations/osiris_bottom/osiris_bottom.cpp)
 set(MAIN_LIBS lvgl lvgl::examples lvgl::demos lvgl::thorvg ${SDL2_LIBRARIES})
 
 # Create the main executable, depending on the FreeRTOS option
@@ -142,6 +142,11 @@ if(LVGL_PRO_PROJECT_DIR)
 endif()
 
 add_executable(main ${MAIN_SOURCES}
+    src/fonts/ui_font_antonio24.c
+    src/fonts/ui_font_antonio36.c
+    src/fonts/ui_font_antonio64.c
+    src/fonts/ui_font_antonio110.c
+    src/fonts/ui_font_antonio200.c
     src/fonts/ui_font_mdi18.c
     src/fonts/ui_font_mdi30.c
     src/fonts/ui_font_mdi34.c
@@ -160,6 +165,7 @@ add_executable(main ${MAIN_SOURCES}
     src/fonts/ui_font_ver30.c
     src/fonts/ui_font_ver60.c
     src/fonts/ui_font_ver70.c
+    src/glyphs/bes_icons/bes_gitter.c
     src/glyphs/hud_icons/coolant_temperature.c
     src/glyphs/hud_icons/engine.c
     src/glyphs/hud_icons/gas_station.c
