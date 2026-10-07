@@ -69,7 +69,7 @@ add_compile_definitions($<$<BOOL:${LV_USE_FFMPEG}>:LV_USE_FFMPEG=1>)
 add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${PROJECT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS})
 
-set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c src/simulations/hud/hud.c src/simulations/horus/horus.c src/simulations/bes/bes.c src/simulations/bes/bes_lcars.c src/simulations/bes/bes_tones.c src/simulations/bes/bes_tones_sdl.c src/simulations/osiris_top/osiris_top.cpp src/simulations/osiris_bottom/osiris_bottom.cpp)
+set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c src/simulations/hud/hud.c src/simulations/horus/horus.c src/simulations/bes/bes.c src/simulations/bes/bes_lcars.c src/simulations/bes/bes_tones.c src/simulations/bes/bes_tones_sdl.c src/simulations/osiris_top/osiris_top.cpp src/simulations/osiris_bottom/osiris_bottom.cpp src/lcars/lcars.c src/simulations/osiris_lcars/osiris_lcars.c)
 set(MAIN_LIBS lvgl lvgl::examples lvgl::demos lvgl::thorvg ${SDL2_LIBRARIES})
 
 # Create the main executable, depending on the FreeRTOS option
@@ -142,6 +142,11 @@ if(LVGL_PRO_PROJECT_DIR)
 endif()
 
 add_executable(main ${MAIN_SOURCES}
+    src/fonts/ui_font_antonio16.c
+    src/fonts/ui_font_antonio20.c
+    src/fonts/ui_font_antonio28.c
+    src/fonts/ui_font_antonio44.c
+    src/fonts/ui_font_antonio80.c
     src/fonts/ui_font_antonio24.c
     src/fonts/ui_font_antonio36.c
     src/fonts/ui_font_antonio64.c
@@ -221,6 +226,15 @@ add_executable(main ${MAIN_SOURCES}
 )
 target_compile_definitions(main PRIVATE LV_CONF_INCLUDE_SIMPLE)
 target_link_libraries(main ${MAIN_LIBS})
+
+# Entwurfsbilder ohne Fenster: bin/render_osiris <ordner>
+find_package(ZLIB REQUIRED)
+add_executable(render_osiris tools/render_osiris.c src/lcars/lcars.c
+    src/simulations/osiris_lcars/osiris_lcars.c
+    src/fonts/ui_font_antonio16.c src/fonts/ui_font_antonio20.c src/fonts/ui_font_antonio28.c
+    src/fonts/ui_font_antonio36.c src/fonts/ui_font_antonio44.c src/fonts/ui_font_antonio80.c)
+target_compile_definitions(render_osiris PRIVATE LV_CONF_INCLUDE_SIMPLE)
+target_link_libraries(render_osiris lvgl lvgl::thorvg ZLIB::ZLIB)
 
 # On Windows, GUI applications do not show a console by default,
 # which hides log output. This ensures a console is available for logging.
