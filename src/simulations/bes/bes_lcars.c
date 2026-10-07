@@ -147,8 +147,9 @@ static void (*menu_cb)(void);
 static void (*mode_cb)(int);
 
 /* --- Menü ------------------------------------------------------------------ */
-enum { PAGE_WEATHER, PAGE_SCENES, PAGE_SWITCHES, PAGE_COUNT };
-static const char *PAGE_NAME[PAGE_COUNT] = { "WETTER", "SZENEN", "SCHALTER" };
+enum { PAGE_WEATHER, PAGE_SCENES, PAGE_SWITCHES, PAGE_DEVICE, PAGE_COUNT };
+static const char *PAGE_NAME[PAGE_COUNT] = { "WETTER", "SZENEN", "SCHALTER", "GERÄT" };
+static void    (*device_cb)(int);         /* Firmware: Tür/Fach angetippt (bes_lcars_device_t) */
 
 static bool      menu_open;
 static int       menu_page = PAGE_WEATHER;
@@ -582,6 +583,8 @@ static void main_clicked(lv_event_t *e)
  *  Aufbau
  * ------------------------------------------------------------------------- */
 
+static void build_device_page(void);
+
 static void build_frame(lv_obj_t *scr)
 {
     /* Winkel oben und unten, dazwischen die Säule */
@@ -708,6 +711,33 @@ static void build_menu(lv_obj_t *mm)
         caption(switch_block[i], &ui_font_antonio36, "", LV_ALIGN_LEFT_MID, 16, 0);
         switch_state_lbl[i] = caption(switch_block[i], &ui_font_antonio36, "AUS", LV_ALIGN_RIGHT_MID, -16, 0);
         lv_obj_set_hidden(switch_block[i], true);
+    }
+    build_device_page();
+}
+
+static void device_clicked(lv_event_t *e)
+{
+    int aktion = (int)(intptr_t)lv_event_get_user_data(e);
+    bes_tones_play(BES_TONE_SELECT);
+    if (device_cb) device_cb(aktion);
+#ifndef BES_LCARS_DEVICE
+    else bes_lcars_set_message("FINGER AUFLEGEN");
+#endif
+}
+
+void bes_lcars_set_device_cb(void (*cb)(int)) { device_cb = cb; }
+
+/* --- Gerät: Tür und Fach -- Ausführung erst nach erkanntem Finger (Firmware) --- */
+static void build_device_page(void)
+{
+    lv_obj_t *d = page[PAGE_DEVICE];
+    lv_obj_set_pos(text(d, &ui_font_antonio24, "GERÄT · FREIGABE PER FINGERABDRUCK", ROLE_ACCENT), 0, 14);
+    static const char *T[3] = { "SCHLÜSSELBRETT ÖFFNEN", "FACH AUSFAHREN", "FACH EINFAHREN" };
+    for (int i = 0; i < 3; i++) {
+        lv_obj_t *b = block(d, 0, 60 + i * 100, MAIN_W, 86, 43, i == 2 ? ROLE_FRAME_C : ROLE_FRAME_B);
+        lv_obj_set_clickable(b, true);
+        lv_obj_add_event_cb(b, device_clicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+        caption(b, &ui_font_antonio36, T[i], LV_ALIGN_LEFT_MID, 30, 0);
     }
 }
 

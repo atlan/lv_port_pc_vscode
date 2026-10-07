@@ -47,7 +47,11 @@ void bes_lcars_set_climate(int zehntel_grad, int feuchte);
  * Firmware das Öffnen selbst; ohne Rückruf öffnet der Schirm sein eingebautes Menü. */
 void bes_lcars_set_menu_cb(void (*cb)(void));
 void bes_lcars_menu_open(bool open);
-void bes_lcars_menu_page(int page);          /* 0 Wetter, 1 Szenen, 2 Schalter */
+void bes_lcars_menu_page(int page);          /* 0 Wetter, 1 Szenen, 2 Schalter, 3 Gerät */
+
+/* --- Gerät (Menüseite): Tür und Fach, die Firmware verlangt den Finger dazu ---- */
+typedef enum { BES_LCARS_TUER_AUF = 0, BES_LCARS_FACH_AUS = 1, BES_LCARS_FACH_EIN = 2 } bes_lcars_device_t;
+void bes_lcars_set_device_cb(void (*cb)(int aktion));
 
 /* --- Wetterübersicht ----------------------------------------------------- */
 #define BES_LCARS_FORECAST_MAX 5
