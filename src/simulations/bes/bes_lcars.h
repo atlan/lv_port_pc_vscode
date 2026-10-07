@@ -38,6 +38,11 @@ void bes_lcars_set_time(int hour, int minute);
 /* Anwesenheit: 1 = allein, 2 = zu zweit */
 void bes_lcars_set_presence(int persons);
 int  bes_lcars_get_presence(void);
+/* Mit Rückruf wird ein Tipp auf den Umschalter NICHT lokal übernommen, sondern gemeldet
+ * (die Firmware setzt input_number.horus_home_count; der Wert kommt von HA zurück). */
+void bes_lcars_set_presence_cb(void (*cb)(int persons));
+/* Raumklima in der Fußleiste (SHT31 im Gerät) */
+void bes_lcars_set_climate(int zehntel_grad, int feuchte);
 /* Menü (Endkappe der Kopfleiste): Wetter, Szenen, Schalter. Mit Rückruf übernimmt die
  * Firmware das Öffnen selbst; ohne Rückruf öffnet der Schirm sein eingebautes Menü. */
 void bes_lcars_set_menu_cb(void (*cb)(void));

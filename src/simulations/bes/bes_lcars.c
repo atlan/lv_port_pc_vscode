@@ -2,6 +2,7 @@
 #include "bes_tones.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -127,6 +128,8 @@ static lv_obj_t *mode_block[BES_LCARS_MODE_COUNT];
 static lv_obj_t *mode_marker;
 static lv_obj_t *lbl_clock;
 static lv_obj_t *lbl_presence;        /* Beschriftung des Umschalters in der Fussleiste */
+static lv_obj_t *lbl_climate;         /* Raumklima in der Fussleiste */
+static void    (*presence_cb)(int);   /* Firmware: Umschalter angetippt -> HA */
 static int       presence = 1;
 static lv_obj_t *code_slot[BES_LCARS_CODE_LEN];
 static lv_obj_t *top_bar;
@@ -498,8 +501,18 @@ static void flash_ende(lv_timer_t *t)
 static void presence_clicked(lv_event_t *e)
 {
     LV_UNUSED(e);
-    bes_lcars_set_presence(presence == 1 ? 2 : 1);
+    int neu = presence == 1 ? 2 : 1;
     bes_tones_play(BES_TONE_SELECT);
+    if (presence_cb) presence_cb(neu);      /* die Firmware setzt HA; der Wert kommt zurueck */
+    else bes_lcars_set_presence(neu);
+}
+
+void bes_lcars_set_presence_cb(void (*cb)(int)) { presence_cb = cb; }
+
+void bes_lcars_set_climate(int zehntel_grad, int feuchte)
+{
+    if (!lbl_climate) return;
+    lv_label_set_text_fmt(lbl_climate, "%d,%d °C · %d %%", zehntel_grad / 10, abs(zehntel_grad % 10), feuchte);
 }
 
 static void menu_clicked(lv_event_t *e)
@@ -599,7 +612,7 @@ static void build_frame(lv_obj_t *scr)
     foot_block[0] = block(foot, 0, 0, 10, BOT_H, 0, ROLE_FRAME_C);
     lv_obj_set_flex_grow(foot_block[0], 1);
     for (int i = 1; i < 3; i++) foot_block[i] = block(foot, 0, 0, FOOT_FIELD_W, BOT_H, 0, ROLE_FRAME_C);
-    caption(foot_block[1], &ui_font_antonio24, "21,5 °C · 45 %", LV_ALIGN_RIGHT_MID, -12, 0);
+    lbl_climate = caption(foot_block[1], &ui_font_antonio24, "--,- °C · -- %", LV_ALIGN_RIGHT_MID, -12, 0);
     lbl_presence = caption(foot_block[2], &ui_font_antonio24, "", LV_ALIGN_RIGHT_MID, -12, 0);
     lv_obj_set_clickable(foot_block[2], true);
     lv_obj_add_event_cb(foot_block[2], presence_clicked, LV_EVENT_CLICKED, NULL);
