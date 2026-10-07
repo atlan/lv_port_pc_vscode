@@ -147,8 +147,14 @@ static void (*menu_cb)(void);
 static void (*mode_cb)(int);
 
 /* --- Menü ------------------------------------------------------------------ */
-enum { PAGE_WEATHER, PAGE_SCENES, PAGE_SWITCHES, PAGE_DEVICE, PAGE_COUNT };
-static const char *PAGE_NAME[PAGE_COUNT] = { "WETTER", "SZENEN", "SCHALTER", "GERÄT" };
+enum { PAGE_WEATHER, PAGE_SCENES, PAGE_SWITCHES, PAGE_DEVICE, PAGE_SETTINGS, PAGE_COUNT };
+static const char *PAGE_NAME[PAGE_COUNT] = { "WETTER", "SZENEN", "SCHALTER", "GERÄT", "OPTIONEN" };
+/* Einstellungen: Helligkeit (Segmente), Schoner (Pillen), Finger */
+static bes_lcars_settings_cbs_t settings_cbs;
+static lv_obj_t *bri_seg[10], *lbl_bri, *ss_pill[BES_LCARS_SS_COUNT], *lbl_finger_n, *lbl_finger_msg;
+static int       bri_pct = 100, ss_idx = 2;
+static const int SS_MIN[BES_LCARS_SS_COUNT] = { 1, 3, 5, 10, 30, 60, 0 };
+static const char *SS_TXT[BES_LCARS_SS_COUNT] = { "1", "3", "5", "10", "30", "60", "NIE" };
 static void    (*device_cb)(int);         /* Firmware: Tür/Fach angetippt (bes_lcars_device_t) */
 
 static bool      menu_open;
@@ -584,6 +590,7 @@ static void main_clicked(lv_event_t *e)
  * ------------------------------------------------------------------------- */
 
 static void build_device_page(void);
+static void build_settings_page(void);
 
 static void build_frame(lv_obj_t *scr)
 {
@@ -713,6 +720,7 @@ static void build_menu(lv_obj_t *mm)
         lv_obj_set_hidden(switch_block[i], true);
     }
     build_device_page();
+    build_settings_page();
 }
 
 static void device_clicked(lv_event_t *e)
@@ -739,6 +747,99 @@ static void build_device_page(void)
         lv_obj_add_event_cb(b, device_clicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
         caption(b, &ui_font_antonio36, T[i], LV_ALIGN_LEFT_MID, 30, 0);
     }
+}
+
+/* --- Einstellungen ---------------------------------------------------------- */
+static void settings_zeigen(void)
+{
+    for (int i = 0; i < 10; i++) if (bri_seg[i])
+        lv_obj_set_style_bg_color(bri_seg[i], C((i + 1) * 10 <= bri_pct ? 0xFF9900 : 0x333355), 0);
+    if (lbl_bri) lv_label_set_text_fmt(lbl_bri, "%d %%", bri_pct);
+    for (int i = 0; i < BES_LCARS_SS_COUNT; i++) if (ss_pill[i])
+        lv_obj_set_style_bg_color(ss_pill[i], C(i == ss_idx ? 0xFFFF99 : 0xCC99CC), 0);
+}
+
+static void bri_clicked(lv_event_t *e)
+{
+    bri_pct = ((int)(intptr_t)lv_event_get_user_data(e) + 1) * 10;
+    bes_tones_play(BES_TONE_KEY);
+    settings_zeigen();
+    if (settings_cbs.on_brightness) settings_cbs.on_brightness(bri_pct);
+}
+
+static void ss_clicked(lv_event_t *e)
+{
+    ss_idx = (int)(intptr_t)lv_event_get_user_data(e);
+    bes_tones_play(BES_TONE_KEY);
+    settings_zeigen();
+    if (settings_cbs.on_screensaver) settings_cbs.on_screensaver(SS_MIN[ss_idx]);
+}
+
+static void finger_clicked(lv_event_t *e)
+{
+    int aktion = (int)(intptr_t)lv_event_get_user_data(e);
+    bes_tones_play(BES_TONE_SELECT);
+    if (settings_cbs.on_finger) settings_cbs.on_finger(aktion);
+#ifndef BES_LCARS_DEVICE
+    else lv_label_set_text(lbl_finger_msg, aktion == BES_LCARS_FINGER_ANLERNEN ? "FINGER AUFLEGEN (1/2)" : "ALLE GELÖSCHT");
+#endif
+}
+
+void bes_lcars_set_settings_cbs(bes_lcars_settings_cbs_t cbs) { settings_cbs = cbs; }
+
+void bes_lcars_set_settings(int brightness_pct, int screensaver_min, int finger_count)
+{
+    bri_pct = brightness_pct < 10 ? 10 : brightness_pct > 100 ? 100 : brightness_pct;
+    ss_idx = BES_LCARS_SS_COUNT - 1;
+    for (int i = 0; i < BES_LCARS_SS_COUNT; i++) if (SS_MIN[i] == screensaver_min) ss_idx = i;
+    if (lbl_finger_n) lv_label_set_text_fmt(lbl_finger_n, "%d GESPEICHERT", finger_count);
+    settings_zeigen();
+}
+
+void bes_lcars_set_finger_count(int n)
+{
+    if (lbl_finger_n) lv_label_set_text_fmt(lbl_finger_n, "%d GESPEICHERT", n);
+}
+
+void bes_lcars_set_finger_message(const char *text)
+{
+    if (lbl_finger_msg) lv_label_set_text(lbl_finger_msg, text ? text : "");
+}
+
+static void build_settings_page(void)
+{
+    lv_obj_t *d = page[PAGE_SETTINGS];
+    lv_obj_set_pos(text(d, &ui_font_antonio24, "HELLIGKEIT", ROLE_ACCENT), 0, 14);
+    lbl_bri = text(d, &ui_font_antonio24, "", ROLE_DATA);
+    lv_obj_align(lbl_bri, LV_ALIGN_TOP_RIGHT, 0, 14);
+    int32_t sw = (MAIN_W - 9 * 6) / 10;
+    for (int i = 0; i < 10; i++) {
+        bri_seg[i] = black(d, i * (sw + 6), 50, sw, 44, 0);
+        lv_obj_set_clickable(bri_seg[i], true);
+        lv_obj_add_event_cb(bri_seg[i], bri_clicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+    }
+    lv_obj_set_pos(text(d, &ui_font_antonio24, "BILDSCHIRMSCHONER · MINUTEN", ROLE_ACCENT), 0, 124);
+    int32_t pw = (MAIN_W - (BES_LCARS_SS_COUNT - 1) * 6) / BES_LCARS_SS_COUNT;
+    for (int i = 0; i < BES_LCARS_SS_COUNT; i++) {
+        ss_pill[i] = black(d, i * (pw + 6), 160, pw, 44, 22);
+        lv_obj_set_clickable(ss_pill[i], true);
+        lv_obj_add_event_cb(ss_pill[i], ss_clicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+        caption(ss_pill[i], &ui_font_antonio24, SS_TXT[i], LV_ALIGN_CENTER, 0, 0);
+    }
+    lv_obj_set_pos(text(d, &ui_font_antonio24, "FINGERABDRÜCKE", ROLE_ACCENT), 0, 234);
+    lbl_finger_n = text(d, &ui_font_antonio24, "0 GESPEICHERT", ROLE_DATA);
+    lv_obj_align(lbl_finger_n, LV_ALIGN_TOP_RIGHT, 0, 234);
+    static const char *F[2] = { "FINGER ANLERNEN", "ALLE LÖSCHEN" };
+    int32_t fw = (MAIN_W - 12) / 2;
+    for (int i = 0; i < 2; i++) {
+        lv_obj_t *b = block(d, i * (fw + 12), 270, fw, 70, 35, i ? ROLE_FRAME_C : ROLE_FRAME_B);
+        lv_obj_set_clickable(b, true);
+        lv_obj_add_event_cb(b, finger_clicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+        caption(b, &ui_font_antonio36, F[i], LV_ALIGN_CENTER, 0, 0);
+    }
+    lbl_finger_msg = text(d, &ui_font_antonio24, "", ROLE_DATA);
+    lv_obj_set_pos(lbl_finger_msg, 0, 356);
+    settings_zeigen();
 }
 
 static void build_main(lv_obj_t *scr)

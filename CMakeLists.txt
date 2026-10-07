@@ -235,6 +235,12 @@ add_executable(render_osiris tools/render_osiris.c src/lcars/lcars.c
     src/fonts/ui_font_antonio36.c src/fonts/ui_font_antonio44.c src/fonts/ui_font_antonio80.c)
 target_compile_definitions(render_osiris PRIVATE LV_CONF_INCLUDE_SIMPLE)
 target_link_libraries(render_osiris lvgl lvgl::thorvg ZLIB::ZLIB)
+add_executable(render_bes tools/render_bes.c
+    src/simulations/bes/bes_lcars.c src/simulations/bes/bes_tones.c src/glyphs/bes_icons/bes_gitter.c
+    src/fonts/ui_font_antonio24.c src/fonts/ui_font_antonio36.c src/fonts/ui_font_antonio64.c
+    src/fonts/ui_font_antonio110.c src/fonts/ui_font_antonio200.c)
+target_compile_definitions(render_bes PRIVATE LV_CONF_INCLUDE_SIMPLE BES_LCARS_DEVICE)
+target_link_libraries(render_bes lvgl lvgl::thorvg ZLIB::ZLIB)
 
 # On Windows, GUI applications do not show a console by default,
 # which hides log output. This ensures a console is available for logging.

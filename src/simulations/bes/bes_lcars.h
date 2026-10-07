@@ -53,6 +53,19 @@ void bes_lcars_menu_page(int page);          /* 0 Wetter, 1 Szenen, 2 Schalter, 
 typedef enum { BES_LCARS_TUER_AUF = 0, BES_LCARS_FACH_AUS = 1, BES_LCARS_FACH_EIN = 2 } bes_lcars_device_t;
 void bes_lcars_set_device_cb(void (*cb)(int aktion));
 
+/* --- Einstellungen (Menüseite): Helligkeit, Schoner, Fingerabdrücke --------- */
+#define BES_LCARS_SS_COUNT 7                    /* 1 3 5 10 30 60 NIE(0) Minuten */
+typedef enum { BES_LCARS_FINGER_ANLERNEN = 0, BES_LCARS_FINGER_ALLE_LOESCHEN = 1 } bes_lcars_finger_t;
+typedef struct {
+    void (*on_brightness)(int pct);             /* 10..100 */
+    void (*on_screensaver)(int minuten);        /* 0 = nie */
+    void (*on_finger)(int aktion);              /* bes_lcars_finger_t */
+} bes_lcars_settings_cbs_t;
+void bes_lcars_set_settings_cbs(bes_lcars_settings_cbs_t cbs);
+void bes_lcars_set_settings(int brightness_pct, int screensaver_min, int finger_count);   /* Anzeige nachführen */
+void bes_lcars_set_finger_message(const char *text);
+void bes_lcars_set_finger_count(int n);                                      /* Zeile unter den Tasten */
+
 /* --- Wetterübersicht ----------------------------------------------------- */
 #define BES_LCARS_FORECAST_MAX 5
 typedef struct {
